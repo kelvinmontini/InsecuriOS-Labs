@@ -3,3 +3,5 @@
 //
 
 #import "BiometricsObjcChecker.h"
+#import "JailbreakObjcChecker.h"
+#import "JailbreakChecker.h"

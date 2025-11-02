@@ -8,10 +8,35 @@
 
 /* Begin PBXBuildFile section */
 		028C1C752EB6FD550051EC2C /* IOSSecuritySuite in Frameworks */ = {isa = PBXBuildFile; productRef = 028C1C742EB6FD550051EC2C /* IOSSecuritySuite */; };
+		028C1D562EB7E5BD0051EC2C /* libJailbreakChecker.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 028C1D542EB7E5A60051EC2C /* libJailbreakChecker.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		028C1D4D2EB7E3130051EC2C /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		028C1D532EB7E4750051EC2C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				028C1D562EB7E5BD0051EC2C /* libJailbreakChecker.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		027FAE0F2EB6C29E0087DEF7 /* InsecuriOS Labs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "InsecuriOS Labs.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		028C1D542EB7E5A60051EC2C /* libJailbreakChecker.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libJailbreakChecker.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -51,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				027FAE112EB6C29E0087DEF7 /* InsecuriOS Labs */,
+				028C1D3F2EB7E23B0051EC2C /* Frameworks */,
 				027FAE102EB6C29E0087DEF7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +89,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		028C1D3F2EB7E23B0051EC2C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				028C1D542EB7E5A60051EC2C /* libJailbreakChecker.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -73,6 +107,8 @@
 				027FAE0B2EB6C29E0087DEF7 /* Sources */,
 				027FAE0C2EB6C29E0087DEF7 /* Frameworks */,
 				027FAE0D2EB6C29E0087DEF7 /* Resources */,
+				028C1D4D2EB7E3130051EC2C /* Embed Libraries */,
+				028C1D532EB7E4750051EC2C /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -168,6 +204,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "me.c4rp.InsecuriOS-Labs";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -202,6 +242,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "me.c4rp.InsecuriOS-Labs";
