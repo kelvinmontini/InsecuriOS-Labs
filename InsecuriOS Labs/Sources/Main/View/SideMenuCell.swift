@@ -70,13 +70,11 @@ extension SideMenuCell: ViewCode {
         NSLayoutConstraint.activate([
             containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             containerView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            containerView.widthAnchor.constraint(equalToConstant: 64),
-            containerView.heightAnchor.constraint(equalToConstant: 64),
+            containerView.widthAnchor.constraint(equalToConstant: 48),
+            containerView.heightAnchor.constraint(equalToConstant: 48),
             
             iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 32),
-            iconImageView.heightAnchor.constraint(equalToConstant: 32),
             
             titleLabel.leadingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: 8),
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
