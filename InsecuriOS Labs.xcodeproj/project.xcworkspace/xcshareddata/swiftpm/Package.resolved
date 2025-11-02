@@ -1,6 +1,15 @@
 {
-  "originHash" : "b9cd5c09953d8318bdd8802e1c4886c87cf32133ba596a1da2163ffa6ce9275e",
+  "originHash" : "daa879831ea8c038945217d766bdb05a131502c6687611b76b7a857850bf3a1e",
   "pins" : [
+    {
+      "identity" : "alamofire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/Alamofire.git",
+      "state" : {
+        "revision" : "513364f870f6bfc468f9d2ff0a95caccc10044c5",
+        "version" : "5.10.2"
+      }
+    },
     {
       "identity" : "iossecuritysuite",
       "kind" : "remoteSourceControl",
@@ -8,6 +17,15 @@
       "state" : {
         "revision" : "0c84a2d3b3832c8f9c9347e6b995668db87e2ba1",
         "version" : "2.2.0"
+      }
+    },
+    {
+      "identity" : "trustkit",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:datatheorem/TrustKit.git",
+      "state" : {
+        "revision" : "a94f27be00a9811618ff92f0d3fc40dac8211ba7",
+        "version" : "3.0.7"
       }
     }
   ],
