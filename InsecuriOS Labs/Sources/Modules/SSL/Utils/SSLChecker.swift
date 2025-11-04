@@ -5,9 +5,6 @@ import TrustKit
 
 final class SSLChecker: NSObject {
     
-    /// Generate pinnedPublicKeyHash:
-    /// `openssl s_client -servername github.com -connect github.com:443 < /dev/null 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64`
-
     private static let domain = "github.com"
     private static let wildcardHost = "*.\(domain)"
     private static let testURLString = "https://\(domain)"
