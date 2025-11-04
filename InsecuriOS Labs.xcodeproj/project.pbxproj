@@ -11,6 +11,7 @@
 		028C1D562EB7E5BD0051EC2C /* libJailbreakChecker.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 028C1D542EB7E5A60051EC2C /* libJailbreakChecker.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		028C1DD42EB7F2DB0051EC2C /* TrustKit in Frameworks */ = {isa = PBXBuildFile; productRef = 028C1DD32EB7F2DB0051EC2C /* TrustKit */; };
 		028C1DD82EB7F2DB0051EC2C /* TrustKitStatic in Frameworks */ = {isa = PBXBuildFile; productRef = 028C1DD72EB7F2DB0051EC2C /* TrustKitStatic */; };
+		028C1EA32EB9A2650051EC2C /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 028C1EA22EB9A2650051EC2C /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -68,6 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				028C1DD82EB7F2DB0051EC2C /* TrustKitStatic in Frameworks */,
+				028C1EA32EB9A2650051EC2C /* Alamofire in Frameworks */,
 				028C1DD42EB7F2DB0051EC2C /* TrustKit in Frameworks */,
 				028C1C752EB6FD550051EC2C /* IOSSecuritySuite in Frameworks */,
 			);
@@ -126,6 +128,7 @@
 				028C1C742EB6FD550051EC2C /* IOSSecuritySuite */,
 				028C1DD32EB7F2DB0051EC2C /* TrustKit */,
 				028C1DD72EB7F2DB0051EC2C /* TrustKitStatic */,
+				028C1EA22EB9A2650051EC2C /* Alamofire */,
 			);
 			productName = "InsecuriOS Labs";
 			productReference = 027FAE0F2EB6C29E0087DEF7 /* InsecuriOS Labs.app */;
@@ -453,6 +456,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 028C1DD22EB7F2DB0051EC2C /* XCRemoteSwiftPackageReference "TrustKit" */;
 			productName = TrustKitStatic;
+		};
+		028C1EA22EB9A2650051EC2C /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 028C1DD92EB7F3290051EC2C /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
