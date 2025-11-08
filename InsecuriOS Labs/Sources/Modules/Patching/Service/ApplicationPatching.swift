@@ -8,11 +8,8 @@ final class ApplicationPatching {
     typealias ChallengeStateUpdate = (ChallengeState) -> Void
     
     private enum Constants {
-        static let countdownDuration = 5
         static let loadingDelay: TimeInterval = 0.5
         static let detectionDelay: TimeInterval = 2.0
-        static let killApplicationDelay: TimeInterval = 1.5
-        static let successCheckDelay: TimeInterval = 3.0
     }
     
     private func createResult(debuggerDetected: Bool) -> Result<Bool, Error> {
@@ -58,38 +55,6 @@ final class ApplicationPatching {
             DispatchQueue.main.async {
                 onStateUpdate(.finished(result))
             }
-        }
-    }
-    
-    func killApplicationWithStates(
-        onStateUpdate: @escaping ChallengeStateUpdate,
-        onCountdownUpdate: @escaping (Int) -> Void
-    ) {
-        onStateUpdate(.started)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
-            onStateUpdate(.loading)
-            
-            var countdown = Constants.countdownDuration
-            onCountdownUpdate(countdown)
-            
-            let countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-                countdown -= 1
-                onCountdownUpdate(countdown)
-                
-                if countdown <= 0 {
-                    timer.invalidate()
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.successCheckDelay) {
-                        onStateUpdate(.finished(.success(false)))
-                    }
-                    
-                    DispatchQueue.main.async {
-                        exit(-1)
-                    }
-                }
-            }
-            RunLoop.current.add(countdownTimer, forMode: .common)
         }
     }
     

@@ -6,20 +6,10 @@ protocol ChallengeBottomSheetDelegate: AnyObject {
 
 protocol ChallengeBottomSheetDataSource: AnyObject {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String?
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, shouldShowCountdown: Bool) -> Bool
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, countdownMessage seconds: Int) -> String?
 }
 
 extension ChallengeBottomSheetDataSource {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
-        return nil
-    }
-    
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, shouldShowCountdown: Bool) -> Bool {
-        return false
-    }
-    
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, countdownMessage seconds: Int) -> String? {
         return nil
     }
 }
@@ -203,18 +193,6 @@ final class ChallengeBottomSheet: UIViewController {
     
     func updateState(_ state: ChallengeState) {
         currentState = state
-    }
-    
-    func updateCountdown(_ seconds: Int) {
-        guard let dataSource = dataSource,
-              dataSource.challengeBottomSheet(self, shouldShowCountdown: true) else { return }
-        
-        guard let message = dataSource.challengeBottomSheet(self, countdownMessage: seconds),
-              !message.isEmpty else { return }
-        
-        resultLabel.text = message
-        resultLabel.isHidden = false
-        resultLabel.textColor = .white
     }
     
     private func updateUI() {

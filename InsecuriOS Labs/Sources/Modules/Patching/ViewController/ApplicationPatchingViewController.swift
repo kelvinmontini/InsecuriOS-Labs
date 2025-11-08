@@ -36,17 +36,6 @@ final class ApplicationPatchingViewController: BaseViewController {
         return button
     }()
     
-    private lazy var killApplicationButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Kill Application", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.addTarget(self, action: #selector(didTapKillApplicationButton), for: .touchUpInside)
-        button.backgroundColor = .PURPLE
-        button.layer.cornerRadius = 8
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
     private lazy var verifyTextButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Verify Text", for: .normal)
@@ -81,17 +70,6 @@ extension ApplicationPatchingViewController {
             
             self.applicationPatching.denyDebuggerExternalWithStates(
                 onStateUpdate: { bottomSheet.updateState($0) }
-            )
-        }
-    }
-    
-    @objc private func didTapKillApplicationButton() {
-        presentChallengeBottomSheet(title: "Kill Application") { [weak self] bottomSheet in
-            guard let self = self else { return }
-            
-            self.applicationPatching.killApplicationWithStates(
-                onStateUpdate: { bottomSheet.updateState($0) },
-                onCountdownUpdate: { bottomSheet.updateCountdown($0) }
             )
         }
     }
@@ -144,8 +122,6 @@ extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
                     return detected ? "Debugger detected." : "No debugger detected."
                 } else if title.contains("Verify Text") {
                     return detected ? "Text verification failed. Expected 'I love Hacking!'." : "Text verification passed. 'I love Hacking!'"
-                } else if title.contains("Kill Application") {
-                    return detected ? "Application terminated successfully." : "Application closure prevented successfully."
                 }
                 return nil
             case .failure:
@@ -156,13 +132,6 @@ extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
         }
     }
     
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, shouldShowCountdown: Bool) -> Bool {
-        return bottomSheet.challengeTitle.contains("Kill Application")
-    }
-    
-    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, countdownMessage seconds: Int) -> String? {
-        return "Application will close automatically in \(seconds) second\(seconds == 1 ? "" : "s"). Try to prevent this from happening."
-    }
 }
 
 extension ApplicationPatchingViewController: ViewCode {
@@ -171,7 +140,6 @@ extension ApplicationPatchingViewController: ViewCode {
         view.addSubview(denyDebugChallenge1Button)
         view.addSubview(denyDebugChallenge2Button)
         view.addSubview(verifyTextButton)
-        view.addSubview(killApplicationButton)
     }
     
     func setupConstraints() {
@@ -194,11 +162,6 @@ extension ApplicationPatchingViewController: ViewCode {
             verifyTextButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             verifyTextButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             verifyTextButton.heightAnchor.constraint(equalToConstant: 52),
-            
-            killApplicationButton.topAnchor.constraint(equalTo: verifyTextButton.bottomAnchor, constant: 16),
-            killApplicationButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            killApplicationButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            killApplicationButton.heightAnchor.constraint(equalToConstant: 52),
         ])
     }
     

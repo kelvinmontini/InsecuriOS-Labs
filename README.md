@@ -85,7 +85,6 @@ Learn to bypass anti-debugging protections and practice method patching techniqu
 **Description:**
 This module presents challenges related to protections against debugging and application modification:
 - Anti-Debugging: Protections that detect and prevent debugger attachment
-- Kill Application: Termination behavior
 - Method Patching: Challenges to modify method behavior at runtime
 
 These techniques are fundamental to understanding how protected applications detect dynamic analysis and how these protections can be bypassed.
