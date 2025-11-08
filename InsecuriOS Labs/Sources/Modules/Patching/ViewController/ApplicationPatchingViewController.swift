@@ -3,32 +3,33 @@ import UIKit
 final class ApplicationPatchingViewController: BaseViewController {
     
     private let applicationPatching = ApplicationPatching()
+    private var currentBottomSheet: ChallengeBottomSheet?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
         label.numberOfLines = 0
-        label.attributedText = "The goal of the exercises below is that by using LLDB, you will be able to intercept the methods that capture debugging and terminate the application, and change the text from \"I love Google!\" to \"I love Apple!\"".withBoldWords(["LLBD", "I love Apple!", "I love Hacking!"])
+        label.attributedText = "The goal of the exercises below is that by using LLDB or Frida you will be able to intercept the methods that detect debugging, and change the text from \"I love Apple!\" to \"I love Hacking!\"".withBoldWords(["LLDB", "Frida", "I love Apple!", "I love Hacking!"])
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private lazy var denyDebuggerButton: UIButton = {
+    private lazy var denyDebugChallenge1Button: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Deny Debugger", for: .normal)
+        button.setTitle("Deny Debug (Challenge 1)", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.addTarget(self, action: #selector(didTapDenyDebuggerButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTapDenyDebugChallenge1Button), for: .touchUpInside)
         button.backgroundColor = .PURPLE
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
-    private lazy var denyDebuggerExternalButton: UIButton = {
+    private lazy var denyDebugChallenge2Button: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Deny Debugger (External)", for: .normal)
+        button.setTitle("Deny Debug (Challenge 2)", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.addTarget(self, action: #selector(didTapDenyDebuggerExternalButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTapDenyDebugChallenge2Button), for: .touchUpInside)
         button.backgroundColor = .PURPLE
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -46,11 +47,11 @@ final class ApplicationPatchingViewController: BaseViewController {
         return button
     }()
     
-    private lazy var showMessageButton: UIButton = {
+    private lazy var verifyTextButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Show Message", for: .normal)
+        button.setTitle("Verify Text", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.addTarget(self, action: #selector(didTapShowMessageButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTapVerifyTextButton), for: .touchUpInside)
         button.backgroundColor = .PURPLE
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -64,37 +65,113 @@ final class ApplicationPatchingViewController: BaseViewController {
 }
 
 extension ApplicationPatchingViewController {
-    @objc private func didTapDenyDebuggerButton() {
-        applicationPatching.denyDebuggerInternal()
-        showResultMessage()
+    @objc private func didTapDenyDebugChallenge1Button() {
+        presentChallengeBottomSheet(title: "Deny Debug (Challenge 1)") { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.applicationPatching.denyDebuggerInternalWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
-    @objc private func didTapDenyDebuggerExternalButton() {
-        applicationPatching.denyDebuggerExternal()
-        showResultMessage()
+    @objc private func didTapDenyDebugChallenge2Button() {
+        presentChallengeBottomSheet(title: "Deny Debug (Challenge 2)") { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.applicationPatching.denyDebuggerExternalWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     @objc private func didTapKillApplicationButton() {
-        applicationPatching.killApplication()
-        showResultMessage()
+        presentChallengeBottomSheet(title: "Kill Application") { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.applicationPatching.killApplicationWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) },
+                onCountdownUpdate: { bottomSheet.updateCountdown($0) }
+            )
+        }
     }
     
-    @objc private func didTapShowMessageButton() {
-        applicationPatching.showAlert()
+    @objc private func didTapVerifyTextButton() {
+        presentChallengeBottomSheet(title: "Verify Text", numberOfIndicators: 2) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.applicationPatching.verifyTextInMemoryWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
-    private func showResultMessage() {
-        HLUtils.showAlert(title: "Are you still here!? Maybe it worked, or you just don’t have a debugger attached.")
+    private func presentChallengeBottomSheet(
+        title: String,
+        numberOfIndicators: Int = 3,
+        onPresented: @escaping (ChallengeBottomSheet) -> Void
+    ) {
+        guard currentBottomSheet == nil else { return }
+        
+        let bottomSheet = ChallengeBottomSheet(challengeTitle: title, numberOfIndicators: numberOfIndicators)
+        bottomSheet.delegate = self
+        bottomSheet.dataSource = self
+        currentBottomSheet = bottomSheet
+        
+        present(bottomSheet, animated: false) {
+            DispatchQueue.main.async {
+                onPresented(bottomSheet)
+            }
+        }
+    }
+}
+
+extension ApplicationPatchingViewController: ChallengeBottomSheetDelegate {
+    func challengeBottomSheetDidDismiss() {
+        currentBottomSheet = nil
+    }
+}
+
+extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        switch state {
+        case .finished(let result):
+            switch result {
+            case .success(let detected):
+                let title = bottomSheet.challengeTitle
+                
+                if title.contains("Deny Debug (Challenge 1)") || title.contains("Deny Debug (Challenge 2)") {
+                    return detected ? "Debugger detected." : "No debugger detected."
+                } else if title.contains("Verify Text") {
+                    return detected ? "Text verification failed. Expected 'I love Hacking!'." : "Text verification passed. 'I love Hacking!'"
+                } else if title.contains("Kill Application") {
+                    return detected ? "Application terminated successfully." : "Application closure prevented successfully."
+                }
+                return nil
+            case .failure:
+                return "Challenge completed with an error."
+            }
+        default:
+            return nil
+        }
+    }
+    
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, shouldShowCountdown: Bool) -> Bool {
+        return bottomSheet.challengeTitle.contains("Kill Application")
+    }
+    
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, countdownMessage seconds: Int) -> String? {
+        return "Application will close automatically in \(seconds) second\(seconds == 1 ? "" : "s"). Try to prevent this from happening."
     }
 }
 
 extension ApplicationPatchingViewController: ViewCode {
     func buildViewHierarchy() {
         view.addSubview(titleLabel)
-        view.addSubview(denyDebuggerButton)
-        view.addSubview(denyDebuggerExternalButton)
+        view.addSubview(denyDebugChallenge1Button)
+        view.addSubview(denyDebugChallenge2Button)
+        view.addSubview(verifyTextButton)
         view.addSubview(killApplicationButton)
-        view.addSubview(showMessageButton)
     }
     
     func setupConstraints() {
@@ -103,25 +180,25 @@ extension ApplicationPatchingViewController: ViewCode {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            denyDebuggerButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
-            denyDebuggerButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            denyDebuggerButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            denyDebuggerButton.heightAnchor.constraint(equalToConstant: 52),
+            denyDebugChallenge1Button.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
+            denyDebugChallenge1Button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            denyDebugChallenge1Button.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            denyDebugChallenge1Button.heightAnchor.constraint(equalToConstant: 52),
             
-            denyDebuggerExternalButton.topAnchor.constraint(equalTo: denyDebuggerButton.bottomAnchor, constant: 16),
-            denyDebuggerExternalButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            denyDebuggerExternalButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            denyDebuggerExternalButton.heightAnchor.constraint(equalToConstant: 52),
+            denyDebugChallenge2Button.topAnchor.constraint(equalTo: denyDebugChallenge1Button.bottomAnchor, constant: 16),
+            denyDebugChallenge2Button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            denyDebugChallenge2Button.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            denyDebugChallenge2Button.heightAnchor.constraint(equalToConstant: 52),
             
-            killApplicationButton.topAnchor.constraint(equalTo: denyDebuggerExternalButton.bottomAnchor, constant: 16),
+            verifyTextButton.topAnchor.constraint(equalTo: denyDebugChallenge2Button.bottomAnchor, constant: 16),
+            verifyTextButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            verifyTextButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            verifyTextButton.heightAnchor.constraint(equalToConstant: 52),
+            
+            killApplicationButton.topAnchor.constraint(equalTo: verifyTextButton.bottomAnchor, constant: 16),
             killApplicationButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             killApplicationButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             killApplicationButton.heightAnchor.constraint(equalToConstant: 52),
-            
-            showMessageButton.topAnchor.constraint(equalTo: killApplicationButton.bottomAnchor, constant: 16),
-            showMessageButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            showMessageButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            showMessageButton.heightAnchor.constraint(equalToConstant: 52),
         ])
     }
     

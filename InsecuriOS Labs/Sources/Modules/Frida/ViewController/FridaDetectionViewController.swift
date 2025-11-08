@@ -5,7 +5,6 @@ final class FridaDetectionViewController: BaseViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.textAlignment = .center
         label.numberOfLines = 0
         label.attributedText = "Below are two challenges to test some common detections of instrumentation tools.\n\nFridaGadget protection will only work for a repackaged application.".withBoldWords(["FridaGadget"])
         label.translatesAutoresizingMaskIntoConstraints = false
