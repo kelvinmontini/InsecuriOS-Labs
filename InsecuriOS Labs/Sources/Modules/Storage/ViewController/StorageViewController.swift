@@ -1,8 +1,16 @@
 import UIKit
 
+enum StorageChallengeType {
+    case interceptKeychain
+    case interceptNSUserDefaults
+    case keychainDump
+}
+
 final class StorageViewController: BaseViewController {
     
     private let dataStorage = DataStorage()
+    private var currentBottomSheet: ChallengeBottomSheet?
+    private var currentChallengeType: StorageChallengeType?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -54,21 +62,106 @@ final class StorageViewController: BaseViewController {
 
 extension StorageViewController {
     @objc private func didTapKeychainSaveButton() {
-        dataStorage.saveAndDeleteKeychain(key: "0p5{0h-no!-y0u-got-m3!}")
-        showAlert()
+        let encrypted = "\u{29}\u{71}\u{3b}\u{39}\u{21}\u{2a}\u{76}\u{73}\u{2c}\u{6f}\u{73}\u{2c}\u{36}\u{71}\u{30}\u{21}\u{71}\u{32}\u{36}\u{6f}\u{77}\u{37}\u{21}\u{21}\u{71}\u{77}\u{77}\u{63}\u{3f}"
+        presentChallengeBottomSheet(title: "Intercept Keychain", challengeType: .interceptKeychain) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.dataStorage.saveAndDeleteKeychainWithStates(
+                key: encrypted,
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     @objc private func didTapUserDefaultButton() {
-        dataStorage.saveAndDeleteNSUserDefaults()
-        showAlert()
+        presentChallengeBottomSheet(title: "Intercept NSUserDefaults", challengeType: .interceptNSUserDefaults) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.dataStorage.saveAndDeleteNSUserDefaultsWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     @objc private func didTapKeychainDumpButton() {
-        showAlert()
+        presentChallengeBottomSheet(title: "Keychain Dump", challengeType: .keychainDump, numberOfIndicators: 2) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.dataStorage.keychainDumpWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
-    private func showAlert() {
-        HLUtils.showAlert(title: "Did you get the string?! ;)")
+    private func presentChallengeBottomSheet(
+        title: String,
+        challengeType: StorageChallengeType,
+        numberOfIndicators: Int = 3,
+        onPresented: @escaping (ChallengeBottomSheet) -> Void
+    ) {
+        guard currentBottomSheet == nil else { return }
+        
+        currentChallengeType = challengeType
+        let bottomSheet = ChallengeBottomSheet(challengeTitle: title, numberOfIndicators: numberOfIndicators)
+        bottomSheet.delegate = self
+        bottomSheet.dataSource = self
+        currentBottomSheet = bottomSheet
+        
+        present(bottomSheet, animated: false) {
+            DispatchQueue.main.async {
+                onPresented(bottomSheet)
+            }
+        }
+    }
+}
+
+extension StorageViewController: ChallengeBottomSheetDelegate {
+    func challengeBottomSheetDidDismiss() {
+        currentBottomSheet = nil
+        currentChallengeType = nil
+    }
+}
+
+extension StorageViewController: ChallengeBottomSheetDataSource {
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        guard let challengeType = currentChallengeType else { return nil }
+        
+        switch state {
+        case .finished(let result):
+            switch result {
+            case .success:
+                switch challengeType {
+                case .interceptKeychain:
+                    return "Keychain operation completed. Did you intercept the value?"
+                case .interceptNSUserDefaults:
+                    return "NSUserDefaults operation completed. Did you intercept the value?"
+                case .keychainDump:
+                    return "The key is already stored. Did you find it?"
+                }
+            case .failure:
+                return "Challenge completed with an error."
+            }
+        default:
+            return nil
+        }
+    }
+    
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, statusTextForState state: ChallengeState) -> String? {
+        guard let challengeType = currentChallengeType else { return nil }
+        
+        switch state {
+        case .loading:
+            switch challengeType {
+            case .interceptKeychain:
+                return "Processing Keychain"
+            case .interceptNSUserDefaults:
+                return "Processing NSUserDefaults"
+            case .keychainDump:
+                return "Dumping Keychain"
+            }
+        default:
+            return nil
+        }
     }
 }
 

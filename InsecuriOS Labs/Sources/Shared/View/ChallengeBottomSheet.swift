@@ -6,10 +6,15 @@ protocol ChallengeBottomSheetDelegate: AnyObject {
 
 protocol ChallengeBottomSheetDataSource: AnyObject {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String?
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, statusTextForState state: ChallengeState) -> String?
 }
 
 extension ChallengeBottomSheetDataSource {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        return nil
+    }
+    
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, statusTextForState state: ChallengeState) -> String? {
         return nil
     }
 }
@@ -202,7 +207,8 @@ final class ChallengeBottomSheet: UIViewController {
             resultLabel.isHidden = true
             
         case .loading:
-            updateStatus(text: "Applying Detections", color: .white, completedIndicators: 1, hasError: false)
+            let loadingText = dataSource?.challengeBottomSheet(self, statusTextForState: currentState) ?? "Applying Detections"
+            updateStatus(text: loadingText, color: .white, completedIndicators: 1, hasError: false)
             if resultLabel.text == nil || resultLabel.text?.isEmpty == true {
                 resultLabel.isHidden = true
             }
@@ -251,7 +257,7 @@ final class ChallengeBottomSheet: UIViewController {
         statusLabel.text = text
         statusLabel.textColor = color
         
-        let isLoading = text == "Applying Detections"
+        let isLoading = currentState == .loading
         
         for (index, indicator) in progressIndicators.enumerated() {
             let isCompleted = index < completedIndicators
