@@ -1,6 +1,8 @@
 import UIKit
 
 final class HLUtils {
+    @inline(never)
+    @_optimize(none)
     static func showAlert(title: String = "", message: String = "") {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)

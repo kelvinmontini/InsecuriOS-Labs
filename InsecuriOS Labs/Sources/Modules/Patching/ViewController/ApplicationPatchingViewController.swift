@@ -1,15 +1,22 @@
 import UIKit
 
+enum PatchingChallengeType {
+    case denyDebugChallenge1
+    case denyDebugChallenge2
+    case memoryPatching
+}
+
 final class ApplicationPatchingViewController: BaseViewController {
     
     private let applicationPatching = ApplicationPatching()
     private var currentBottomSheet: ChallengeBottomSheet?
+    private var currentChallengeType: PatchingChallengeType?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
         label.numberOfLines = 0
-        label.attributedText = "The goal of the exercises below is that by using LLDB or Frida you will be able to intercept the methods that detect debugging, and change the text from \"I love Apple!\" to \"I love Hacking!\"".withBoldWords(["LLDB", "Frida", "I love Apple!", "I love Hacking!"])
+        label.attributedText = "Use LLDB or Frida to complete the challenges below. The first two challenges require bypassing anti-debugging mechanisms by intercepting debugger detection methods. The third challenge requires modifying a string in memory, changing \"There is no spoon\" to \"The spoon is real!\"".withBoldWords(["LLDB", "Frida", "There is no spoon", "The spoon is real!"])
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -38,7 +45,7 @@ final class ApplicationPatchingViewController: BaseViewController {
     
     private lazy var verifyTextButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Verify Text", for: .normal)
+        button.setTitle("Memory Patching", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.addTarget(self, action: #selector(didTapVerifyTextButton), for: .touchUpInside)
         button.backgroundColor = .PURPLE
@@ -55,7 +62,7 @@ final class ApplicationPatchingViewController: BaseViewController {
 
 extension ApplicationPatchingViewController {
     @objc private func didTapDenyDebugChallenge1Button() {
-        presentChallengeBottomSheet(title: "Deny Debug (Challenge 1)") { [weak self] bottomSheet in
+        presentChallengeBottomSheet(title: "Deny Debug (Challenge 1)", challengeType: .denyDebugChallenge1) { [weak self] bottomSheet in
             guard let self = self else { return }
             
             self.applicationPatching.denyDebuggerInternalWithStates(
@@ -65,7 +72,7 @@ extension ApplicationPatchingViewController {
     }
     
     @objc private func didTapDenyDebugChallenge2Button() {
-        presentChallengeBottomSheet(title: "Deny Debug (Challenge 2)") { [weak self] bottomSheet in
+        presentChallengeBottomSheet(title: "Deny Debug (Challenge 2)", challengeType: .denyDebugChallenge2) { [weak self] bottomSheet in
             guard let self = self else { return }
             
             self.applicationPatching.denyDebuggerExternalWithStates(
@@ -75,22 +82,18 @@ extension ApplicationPatchingViewController {
     }
     
     @objc private func didTapVerifyTextButton() {
-        presentChallengeBottomSheet(title: "Verify Text", numberOfIndicators: 2) { [weak self] bottomSheet in
-            guard let self = self else { return }
-            
-            self.applicationPatching.verifyTextInMemoryWithStates(
-                onStateUpdate: { bottomSheet.updateState($0) }
-            )
-        }
+        applicationPatching.getTextInMemory()
     }
     
     private func presentChallengeBottomSheet(
         title: String,
+        challengeType: PatchingChallengeType,
         numberOfIndicators: Int = 3,
         onPresented: @escaping (ChallengeBottomSheet) -> Void
     ) {
         guard currentBottomSheet == nil else { return }
         
+        currentChallengeType = challengeType
         let bottomSheet = ChallengeBottomSheet(challengeTitle: title, numberOfIndicators: numberOfIndicators)
         bottomSheet.delegate = self
         bottomSheet.dataSource = self
@@ -107,23 +110,24 @@ extension ApplicationPatchingViewController {
 extension ApplicationPatchingViewController: ChallengeBottomSheetDelegate {
     func challengeBottomSheetDidDismiss() {
         currentBottomSheet = nil
+        currentChallengeType = nil
     }
 }
 
 extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        guard let challengeType = currentChallengeType else { return nil }
+        
         switch state {
         case .finished(let result):
             switch result {
             case .success(let detected):
-                let title = bottomSheet.challengeTitle
-                
-                if title.contains("Deny Debug (Challenge 1)") || title.contains("Deny Debug (Challenge 2)") {
+                switch challengeType {
+                case .denyDebugChallenge1, .denyDebugChallenge2:
                     return detected ? "Debugger detected." : "No debugger detected."
-                } else if title.contains("Verify Text") {
-                    return detected ? "Text verification failed. Expected 'I love Hacking!'." : "Text verification passed. 'I love Hacking!'"
+                case .memoryPatching:
+                    return detected ? "Text verification failed. Expected 'The spoon is real!'." : "Text verification passed. 'The spoon is real!'"
                 }
-                return nil
             case .failure:
                 return "Challenge completed with an error."
             }

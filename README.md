@@ -7,7 +7,7 @@
 
 InsecuriOS Labs is an educational iOS application designed to demonstrate and practice hacking and pentesting techniques on iOS devices. The application implements various common protections found in commercial iOS apps, allowing students, security researchers, and developers to learn how these protections work and how they can be bypassed using tools such as LLDB, Frida, Reverse Engineering, Patching, and more.
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Implemented Protections](#implemented-protections)
   - [Biometrics (Touch ID / Face ID)](#biometrics-touch-id--face-id)
@@ -117,6 +117,7 @@ open "InsecuriOS Labs.xcodeproj"
 4. Build in Release and install on the device.
 
 ---
+
 
 ## References
 
