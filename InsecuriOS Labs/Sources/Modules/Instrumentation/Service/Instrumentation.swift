@@ -1,10 +1,11 @@
 import Foundation
 import Darwin
 import UIKit
+import MachO
 
 typealias ptrace_t = @convention(c) (Int32, Int32, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Int32
 
-final class ApplicationPatching {
+final class Instrumentation {
     
     typealias ChallengeStateUpdate = (ChallengeState) -> Void
 
@@ -12,6 +13,13 @@ final class ApplicationPatching {
         let processInfo: extern_proc?
         let ptraceResult: Int32
         let ptraceErrno: Int32
+    }
+    
+    struct PortCheckResult {
+        let socketFileDescriptor: Int32
+        let bindResult: Int32
+        let listenResult: Int32
+        let port: in_port_t
     }
     
     private enum Constants {
@@ -158,5 +166,70 @@ final class ApplicationPatching {
         let currentErrno = result == -1 ? errno : 0
         
         return DebugCheckResult(processInfo: processInfo, ptraceResult: result, ptraceErrno: currentErrno)
+    }
+    
+    func detectFridaServerWithStates(
+        onStateUpdate: @escaping ChallengeStateUpdate
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
+            onStateUpdate(.loading)
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            Thread.sleep(forTimeInterval: Constants.detectionDelay)
+            
+            let port = UInt16(27042)
+            let checkResult = Instrumentation.isPortOpen(port: port)
+            let detected = checkResult.bindResult == -1 || checkResult.listenResult == -1
+            
+            let result = self?.createResult(challengeFailed: detected) ?? .success(false)
+            
+            DispatchQueue.main.async {
+                onStateUpdate(.finished(result))
+            }
+        }
+    }
+    
+    static func detectFridaServer() -> PortCheckResult {
+        let port = UInt16(27042)
+        return isPortOpen(port: port)
+    }
+    
+    private static func isPortOpen(port: in_port_t) -> PortCheckResult {
+        let socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0)
+        
+        if socketFileDescriptor == -1 {
+            return PortCheckResult(
+                socketFileDescriptor: socketFileDescriptor,
+                bindResult: -1,
+                listenResult: -1,
+                port: port
+            )
+        }
+        
+        var addr = sockaddr_in()
+        let sizeOfSockkAddr = MemoryLayout<sockaddr_in>.size
+        addr.sin_len = __uint8_t(sizeOfSockkAddr)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = Int(OSHostByteOrder()) == OSLittleEndian ? _OSSwapInt16(port) : port
+        addr.sin_addr = in_addr(s_addr: inet_addr("127.0.0.1"))
+        addr.sin_zero = (0, 0, 0, 0, 0, 0, 0, 0)
+        
+        var bind_addr = sockaddr()
+        memcpy(&bind_addr, &addr, Int(sizeOfSockkAddr))
+        
+        let bindResult = Darwin.bind(socketFileDescriptor, &bind_addr, socklen_t(sizeOfSockkAddr))
+        let listenResult = listen(socketFileDescriptor, SOMAXCONN)
+        
+        close(socketFileDescriptor)
+        
+        return PortCheckResult(
+            socketFileDescriptor: socketFileDescriptor,
+            bindResult: bindResult,
+            listenResult: listenResult,
+            port: port
+        )
     }
 }

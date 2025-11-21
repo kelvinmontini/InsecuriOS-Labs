@@ -1,16 +1,17 @@
 import UIKit
 
-enum PatchingChallengeType {
+enum InstrumentationChallengeType {
     case denyDebugChallenge1
     case denyDebugChallenge2
     case memoryPatching
+    case fridaServerDetection
 }
 
-final class ApplicationPatchingViewController: BaseViewController {
+final class InstrumentationViewController: BaseViewController {
     
-    private let applicationPatching = ApplicationPatching()
+    private let instrumentation = Instrumentation()
     private var currentBottomSheet: ChallengeBottomSheet?
-    private var currentChallengeType: PatchingChallengeType?
+    private var currentChallengeType: InstrumentationChallengeType?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -54,18 +55,29 @@ final class ApplicationPatchingViewController: BaseViewController {
         return button
     }()
     
+    private lazy var fridaServerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Frida Server Detection", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.addTarget(self, action: #selector(didTapFridaServerButton), for: .touchUpInside)
+        button.backgroundColor = .PURPLE
+        button.layer.cornerRadius = 8
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         applyViewCode()
     }
 }
 
-extension ApplicationPatchingViewController {
+extension InstrumentationViewController {
     @objc private func didTapDenyDebugChallenge1Button() {
         presentChallengeBottomSheet(title: "Deny Debug (Challenge 1)", challengeType: .denyDebugChallenge1) { [weak self] bottomSheet in
             guard let self = self else { return }
             
-            self.applicationPatching.denyDebuggerInternalWithStates(
+            self.instrumentation.denyDebuggerInternalWithStates(
                 onStateUpdate: { bottomSheet.updateState($0) }
             )
         }
@@ -75,19 +87,29 @@ extension ApplicationPatchingViewController {
         presentChallengeBottomSheet(title: "Deny Debug (Challenge 2)", challengeType: .denyDebugChallenge2) { [weak self] bottomSheet in
             guard let self = self else { return }
             
-            self.applicationPatching.denyDebuggerExternalWithStates(
+            self.instrumentation.denyDebuggerExternalWithStates(
                 onStateUpdate: { bottomSheet.updateState($0) }
             )
         }
     }
     
     @objc private func didTapVerifyTextButton() {
-        applicationPatching.getTextInMemory()
+        instrumentation.getTextInMemory()
+    }
+    
+    @objc private func didTapFridaServerButton() {
+        presentChallengeBottomSheet(title: "Frida Server Detection", challengeType: .fridaServerDetection) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.instrumentation.detectFridaServerWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     private func presentChallengeBottomSheet(
         title: String,
-        challengeType: PatchingChallengeType,
+        challengeType: InstrumentationChallengeType,
         numberOfIndicators: Int = 3,
         onPresented: @escaping (ChallengeBottomSheet) -> Void
     ) {
@@ -107,14 +129,14 @@ extension ApplicationPatchingViewController {
     }
 }
 
-extension ApplicationPatchingViewController: ChallengeBottomSheetDelegate {
+extension InstrumentationViewController: ChallengeBottomSheetDelegate {
     func challengeBottomSheetDidDismiss() {
         currentBottomSheet = nil
         currentChallengeType = nil
     }
 }
 
-extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
+extension InstrumentationViewController: ChallengeBottomSheetDataSource {
     func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
         guard let challengeType = currentChallengeType else { return nil }
         
@@ -127,6 +149,8 @@ extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
                     return detected ? "Debugger detected." : "No debugger detected."
                 case .memoryPatching:
                     return detected ? "Text verification failed. Expected 'The spoon is real!'." : "Text verification passed. 'The spoon is real!'"
+                case .fridaServerDetection:
+                    return detected ? "Frida server detected." : "No Frida server detected."
                 }
             case .failure:
                 return "Challenge completed with an error."
@@ -138,12 +162,13 @@ extension ApplicationPatchingViewController: ChallengeBottomSheetDataSource {
     
 }
 
-extension ApplicationPatchingViewController: ViewCode {
+extension InstrumentationViewController: ViewCode {
     func buildViewHierarchy() {
         view.addSubview(titleLabel)
         view.addSubview(denyDebugChallenge1Button)
         view.addSubview(denyDebugChallenge2Button)
         view.addSubview(verifyTextButton)
+        view.addSubview(fridaServerButton)
     }
     
     func setupConstraints() {
@@ -166,11 +191,16 @@ extension ApplicationPatchingViewController: ViewCode {
             verifyTextButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             verifyTextButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             verifyTextButton.heightAnchor.constraint(equalToConstant: 52),
+            
+            fridaServerButton.topAnchor.constraint(equalTo: verifyTextButton.bottomAnchor, constant: 16),
+            fridaServerButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            fridaServerButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            fridaServerButton.heightAnchor.constraint(equalToConstant: 52),
         ])
     }
     
     func setupAdditionalConfiguration() {
-        title = "Application Patching"
+        title = "Instrumentation"
         view.backgroundColor = .black
     }
 }

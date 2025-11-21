@@ -12,10 +12,9 @@ InsecuriOS Labs is an educational iOS application designed to demonstrate and pr
 - [Implemented Protections](#implemented-protections)
   - [Biometrics (Touch ID / Face ID)](#biometrics-touch-id--face-id)
   - [Jailbreak Detection](#jailbreak-detection)
-  - [Frida Detection](#frida-detection)
   - [SSL Pinning](#ssl-pinning)
   - [Data Storage](#data-storage)
-  - [Application Patching](#application-patching)
+  - [Instrumentation](#instrumentation)
 
 ### Jailbreak Detection
 
@@ -30,20 +29,6 @@ This module presents four different variations of jailbreak detection:
 - Dynamic Library (dylib): Low-level implementation loaded dynamically
 
 Each implementation demonstrates different detection techniques, providing a complete environment to learn and test bypass methods.
-
----
-
-### Frida Detection
-
-**Objective:**
-Understand how applications detect dynamic instrumentation tools and learn techniques to avoid these detections during security testing.
-
-**Description:**
-This module implements two common Frida detection techniques:
-- Server detection
-- FridaGadget detection
-
-Learning to bypass these detections is essential for performing dynamic security testing on protected iOS applications.
 
 ---
 
@@ -77,17 +62,18 @@ Data is saved and deleted quickly, requiring dynamic interception techniques to 
 
 ---
 
-### Application Patching
+### Instrumentation
 
 **Objective:**
-Learn to bypass anti-debugging protections and practice method patching techniques to modify application behavior at runtime.
+Learn to bypass anti-debugging protections, detect instrumentation tools, and practice method patching techniques to modify application behavior at runtime.
 
 **Description:**
-This module presents challenges related to protections against debugging and application modification:
+This module presents challenges related to protections against debugging, instrumentation detection, and application modification:
 - Anti-Debugging: Protections that detect and prevent debugger attachment
+- Frida Server Detection: Detection of dynamic instrumentation tools via port checking
 - Method Patching: Challenges to modify method behavior at runtime
 
-These techniques are fundamental to understanding how protected applications detect dynamic analysis and how these protections can be bypassed.
+These techniques are fundamental to understanding how protected applications detect dynamic analysis and instrumentation tools, and how these protections can be bypassed.
 
 ---
 
