@@ -1,7 +1,6 @@
 <div align="center">
 
-<img src="assets/banner_light.png#gh-dark-mode-only" width="600" height="220" alt="InsecuriOS Labs">
-<img src="assets/banner_dark.png#gh-light-mode-only" width="600" height="220" alt="InsecuriOS Labs">
+<img src="assets/banner.png" width="600" height="220" alt="InsecuriOS Labs">
 
 </div>
 
