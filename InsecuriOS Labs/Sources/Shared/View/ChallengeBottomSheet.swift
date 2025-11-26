@@ -225,17 +225,17 @@ final class ChallengeBottomSheet: UIViewController {
             let statusText: String
             
             switch result {
-            case .success(let detected):
-                if detected {
-                    statusColor = .systemRed
-                    hasError = true
-                    statusText = "Failed"
-                    message = dataSource?.challengeBottomSheet(self, messageForState: currentState) ?? "Challenge completed with error."
-                } else {
+            case .success(let succeeded):
+                if succeeded {
                     statusColor = .systemGreen
                     hasError = false
                     statusText = "Success"
                     message = dataSource?.challengeBottomSheet(self, messageForState: currentState) ?? "Challenge completed successfully."
+                } else {
+                    statusColor = .systemRed
+                    hasError = true
+                    statusText = "Failed"
+                    message = dataSource?.challengeBottomSheet(self, messageForState: currentState) ?? "Challenge completed with error."
                 }
             case .failure:
                 statusColor = .systemRed
