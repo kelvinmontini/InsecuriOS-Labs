@@ -2,6 +2,6 @@
 
 @interface JailbreakObjcChecker : NSObject
 
-+ (BOOL)isJailbroken;
++ (void)isJailbrokenWithCompletion:(void (^)(BOOL detected))completion;
 
 @end

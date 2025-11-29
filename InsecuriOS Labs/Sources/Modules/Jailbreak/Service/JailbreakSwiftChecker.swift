@@ -1,6 +1,14 @@
 import UIKit
+import Foundation
 
 final class JailbreakSwiftChecker {
+    
+    typealias ChallengeStateUpdate = (ChallengeState) -> Void
+    
+    private enum Constants {
+        static let loadingDelay: TimeInterval = 0.5
+        static let detectionDelay: TimeInterval = 0.5
+    }
     
     static func checkURLSchemes() -> Bool {
         let suspiciousSchemes = [
@@ -112,11 +120,47 @@ final class JailbreakSwiftChecker {
         return false
     }
     
-    static func isJailbroken() -> Bool {
-        if checkURLSchemes() || checkSuspiciousFiles() || checkWritableDirectories() ||
-            checkSymbolicLinks() || checkOpenSystemFiles() || checkForJailbreakTweaks() {
-            return true
+    static func isJailbroken(completion: @escaping (Bool) -> Void) {
+        let urlSchemesResult = checkURLSchemes()
+        let suspiciousFilesResult = checkSuspiciousFiles()
+        let writableDirsResult = checkWritableDirectories()
+        let symbolicLinksResult = checkSymbolicLinks()
+        let systemFilesResult = checkOpenSystemFiles()
+        let tweaksResult = checkForJailbreakTweaks()
+        
+        var detectionFlags: UInt8 = 0
+        if urlSchemesResult { detectionFlags |= 0x01 }
+        if suspiciousFilesResult { detectionFlags |= 0x02 }
+        if writableDirsResult { detectionFlags |= 0x04 }
+        if symbolicLinksResult { detectionFlags |= 0x08 }
+        if systemFilesResult { detectionFlags |= 0x10 }
+        if tweaksResult { detectionFlags |= 0x20 }
+
+        completion(detectionFlags != 0)
+    }
+    
+    static func isJailbrokenWithStates(
+        onStateUpdate: @escaping ChallengeStateUpdate
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
+            onStateUpdate(.loading)
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                Thread.sleep(forTimeInterval: Constants.detectionDelay)
+                
+                var detected = false
+                isJailbroken { result in
+                    detected = result
+                }
+                
+                let finalResult: Result<Bool, Error> = .success(!detected)
+                
+                DispatchQueue.main.async {
+                    onStateUpdate(.finished(finalResult))
+                }
+            }
         }
-        return false
     }
 }

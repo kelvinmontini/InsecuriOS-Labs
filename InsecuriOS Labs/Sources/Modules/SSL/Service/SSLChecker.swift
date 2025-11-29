@@ -8,8 +8,8 @@ final class SSLChecker: NSObject {
     private static let domain = "github.com"
     private static let wildcardHost = "*.\(domain)"
     private static let testURLString = "https://\(domain)"
-    private static let pinnedPublicKeyHash = "sha256/e4wu8h9eLNeNUg6cVb5gGWM0PsiM9M3i3E32qKOkBwY="
-    private static let pinnedPublicKeyHashBackup = "sha256/UoSFbDIf6Y0eWzco1ugHE7sHyQ92pZsc8thjcgMsaYA="
+    private static let pinnedPublicKeyHash = "sha256/e4wu8h9eLNeNUg6cVb5gGWM0PsiM9M3i3E32qKOkBAA="
+    private static let pinnedPublicKeyHashBackup = "sha256/UoSFbDIf6Y0eWzco1ugHE7sHyQ92pZsc8thjcgMsaAB="
     private static let expectedHash = pinnedPublicKeyHash.replacingOccurrences(of: "sha256/", with: "")
     
     private static func extractSPKI(from certificateData: Data) -> Data? {

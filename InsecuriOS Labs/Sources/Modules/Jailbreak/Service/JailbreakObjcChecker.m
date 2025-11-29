@@ -132,12 +132,23 @@
     return NO;
 }
 
-+ (BOOL)isJailbroken {
-    if ([self checkURLSchemes] || [self checkSuspiciousFiles] || [self checkWritableDirectories] ||
-        [self checkSymbolicLinks] || [self checkOpenSystemFiles] || [self checkForJailbreakTweaks]) {
-        return YES;
-    }
-    return NO;
++ (void)isJailbrokenWithCompletion:(void (^)(BOOL detected))completion {
+    BOOL urlSchemesResult = [self checkURLSchemes];
+    BOOL suspiciousFilesResult = [self checkSuspiciousFiles];
+    BOOL writableDirsResult = [self checkWritableDirectories];
+    BOOL symbolicLinksResult = [self checkSymbolicLinks];
+    BOOL systemFilesResult = [self checkOpenSystemFiles];
+    BOOL tweaksResult = [self checkForJailbreakTweaks];
+    
+    uint8_t detectionFlags = 0;
+    if (urlSchemesResult) { detectionFlags |= 0x01; }
+    if (suspiciousFilesResult) { detectionFlags |= 0x02; }
+    if (writableDirsResult) { detectionFlags |= 0x04; }
+    if (symbolicLinksResult) { detectionFlags |= 0x08; }
+    if (systemFilesResult) { detectionFlags |= 0x10; }
+    if (tweaksResult) { detectionFlags |= 0x20; }
+    
+    completion(detectionFlags != 0);
 }
 
 @end

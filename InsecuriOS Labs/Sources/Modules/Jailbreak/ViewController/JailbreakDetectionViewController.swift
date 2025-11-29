@@ -1,7 +1,17 @@
 import UIKit
 import IOSSecuritySuite
 
+enum JailbreakChallengeType {
+    case objcImplementation
+    case swiftImplementation
+    case externalLibraryImplementation
+    case dylibImplementation
+}
+
 final class JailbreakDetectionViewController: BaseViewController {
+    
+    private var currentBottomSheet: ChallengeBottomSheet?
+    private var currentChallengeType: JailbreakChallengeType?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -64,31 +74,133 @@ final class JailbreakDetectionViewController: BaseViewController {
 
 extension JailbreakDetectionViewController {
     @objc private func didTapObjCDetectionButton() {
-        let result = JailbreakObjcChecker.isJailbroken()
-        showResultMessage(detected: result)
-    }
-    
-    @objc private func didTapSwiftDetectionButton() {
-        let result = JailbreakSwiftChecker.isJailbroken()
-        showResultMessage(detected: result)
-    }
-    
-    @objc private func didTapExternalDetectionButton() {
-        let result = IOSSecuritySuite.amIJailbroken()
-        showResultMessage(detected: result)
-    }
-    
-    @objc private func didTapDylibDetectionButton() {
-        if let isJailbrokenFunc = loadJailbreakFunction() {
-            let isJailbroken = unsafeBitCast(isJailbrokenFunc, to: (@convention(c) () -> Int).self)()
-            let result = isJailbroken == 1
-            showResultMessage(detected: result)
+        presentChallengeBottomSheet(title: "Objective-C Implementation", challengeType: .objcImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.performObjCDetectionWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
         }
     }
     
-    private func showResultMessage(detected: Bool) {
-        let resultMessage = detected ? "Ops, detection got you!" : "Congratz! Detection was bypassed!"
-        HLUtils.showAlert(title: resultMessage)
+    @objc private func didTapSwiftDetectionButton() {
+        presentChallengeBottomSheet(title: "Swift Implementation", challengeType: .swiftImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            JailbreakSwiftChecker.isJailbrokenWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
+    }
+    
+    @objc private func didTapExternalDetectionButton() {
+        presentChallengeBottomSheet(title: "External Library Implementation", challengeType: .externalLibraryImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.performExternalDetectionWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
+    }
+    
+    @objc private func didTapDylibDetectionButton() {
+        presentChallengeBottomSheet(title: "dylib Implementation", challengeType: .dylibImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            self.performDylibDetectionWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
+    }
+    
+    private func presentChallengeBottomSheet(
+        title: String,
+        challengeType: JailbreakChallengeType,
+        numberOfIndicators: Int = 3,
+        onPresented: @escaping (ChallengeBottomSheet) -> Void
+    ) {
+        guard currentBottomSheet == nil else { return }
+        
+        currentChallengeType = challengeType
+        let bottomSheet = ChallengeBottomSheet(challengeTitle: title, numberOfIndicators: numberOfIndicators)
+        bottomSheet.delegate = self
+        bottomSheet.dataSource = self
+        currentBottomSheet = bottomSheet
+        
+        present(bottomSheet, animated: false) {
+            DispatchQueue.main.async {
+                onPresented(bottomSheet)
+            }
+        }
+    }
+    
+    private func performObjCDetectionWithStates(
+        onStateUpdate: @escaping (ChallengeState) -> Void
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            onStateUpdate(.loading)
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            Thread.sleep(forTimeInterval: 1.5)
+            
+            JailbreakObjcChecker.isJailbroken { detected in
+                let result: Result<Bool, Error> = .success(!detected)
+                
+                DispatchQueue.main.async {
+                    onStateUpdate(.finished(result))
+                }
+            }
+        }
+    }
+    
+    private func performExternalDetectionWithStates(
+        onStateUpdate: @escaping (ChallengeState) -> Void
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            onStateUpdate(.loading)
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            Thread.sleep(forTimeInterval: 1.5)
+            
+            let detected = IOSSecuritySuite.amIJailbroken()
+            let result: Result<Bool, Error> = .success(!detected)
+            
+            DispatchQueue.main.async {
+                onStateUpdate(.finished(result))
+            }
+        }
+    }
+    
+    private func performDylibDetectionWithStates(
+        onStateUpdate: @escaping (ChallengeState) -> Void
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            onStateUpdate(.loading)
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            Thread.sleep(forTimeInterval: 1.5)
+            
+            var detected = false
+            if let isJailbrokenFunc = self.loadJailbreakFunction() {
+                let isJailbroken = unsafeBitCast(isJailbrokenFunc, to: (@convention(c) () -> Int).self)()
+                detected = isJailbroken == 1
+            }
+            
+            let result: Result<Bool, Error> = .success(!detected)
+            
+            DispatchQueue.main.async {
+                onStateUpdate(.finished(result))
+            }
+        }
     }
     
     private func loadJailbreakFunction() -> UnsafeMutableRawPointer? {
@@ -106,6 +218,31 @@ extension JailbreakDetectionViewController {
         }
         
         return isJailbrokenFunc
+    }
+}
+
+extension JailbreakDetectionViewController: ChallengeBottomSheetDelegate {
+    func challengeBottomSheetDidDismiss() {
+        currentBottomSheet = nil
+        currentChallengeType = nil
+    }
+}
+
+extension JailbreakDetectionViewController: ChallengeBottomSheetDataSource {
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        guard currentChallengeType != nil else { return nil }
+        
+        switch state {
+        case .finished(let result):
+            switch result {
+            case .success(let success):
+                return success ? "Congratz! Detection was bypassed!" : "Ops, detection got you!"
+            case .failure:
+                return "Challenge completed with an error."
+            }
+        default:
+            return nil
+        }
     }
 }
 
