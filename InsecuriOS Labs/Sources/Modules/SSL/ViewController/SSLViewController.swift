@@ -1,6 +1,15 @@
 import UIKit
 
+enum SSLChallengeType {
+    case urlSessionImplementation
+    case alamofireImplementation
+    case trustKitImplementation
+}
+
 final class SSLViewController: BaseViewController {
+    
+    private var currentBottomSheet: ChallengeBottomSheet?
+    private var currentChallengeType: SSLChallengeType?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -52,23 +61,83 @@ final class SSLViewController: BaseViewController {
 
 extension SSLViewController {
     @objc private func didTapURLSessionButton() {
-        let result = SSLChecker.checkSSLWithURLSession()
-        self.showResultMessage(detected: !result)
+        presentChallengeBottomSheet(title: "URLSession Implementation", challengeType: .urlSessionImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            SSLChecker.checkSSLWithURLSessionWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     @objc private func didTapAlamofireButton() {
-        let result = SSLChecker.checkSSLWithAlamofire()
-        self.showResultMessage(detected: !result)
+        presentChallengeBottomSheet(title: "Alamofire Implementation", challengeType: .alamofireImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            SSLChecker.checkSSLWithAlamofireWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
     @objc private func didTapTrustKitButton() {
-        let result = SSLChecker.checkSSLWithTrustKit()
-        self.showResultMessage(detected: !result)
+        presentChallengeBottomSheet(title: "TrustKit Implementation", challengeType: .trustKitImplementation) { [weak self] bottomSheet in
+            guard let self = self else { return }
+            
+            SSLChecker.checkSSLWithTrustKitWithStates(
+                onStateUpdate: { bottomSheet.updateState($0) }
+            )
+        }
     }
     
-    private func showResultMessage(detected: Bool) {
-        let resultMessage = detected ? "Ops, detection got you!" : "Yay! Request was successful."
-        HLUtils.showAlert(title: resultMessage)
+    private func presentChallengeBottomSheet(
+        title: String,
+        challengeType: SSLChallengeType,
+        numberOfIndicators: Int = 3,
+        onPresented: @escaping (ChallengeBottomSheet) -> Void
+    ) {
+        guard currentBottomSheet == nil else { return }
+        
+        currentChallengeType = challengeType
+        let bottomSheet = ChallengeBottomSheet(challengeTitle: title, numberOfIndicators: numberOfIndicators)
+        bottomSheet.delegate = self
+        bottomSheet.dataSource = self
+        currentBottomSheet = bottomSheet
+        
+        present(bottomSheet, animated: false) {
+            DispatchQueue.main.async {
+                onPresented(bottomSheet)
+            }
+        }
+    }
+}
+
+extension SSLViewController: ChallengeBottomSheetDelegate {
+    func challengeBottomSheetDidDismiss() {
+        currentBottomSheet = nil
+        currentChallengeType = nil
+    }
+}
+
+extension SSLViewController: ChallengeBottomSheetDataSource {
+    func challengeBottomSheet(_ bottomSheet: ChallengeBottomSheet, messageForState state: ChallengeState) -> String? {
+        guard let challengeType = currentChallengeType else { return nil }
+        
+        switch state {
+        case .finished(let result):
+            switch result {
+            case .success(let bypassSucceeded):
+                if bypassSucceeded {
+                    return "Congratz! SSL Pinning bypass was successful!"
+                } else {
+                    return "Ops, SSL Pinning protection detected you!"
+                }
+            case .failure:
+                return "Challenge completed with an error."
+            }
+        default:
+            return nil
+        }
     }
 }
 

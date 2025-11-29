@@ -1,3 +1,4 @@
+import Foundation
 import Security
 import CommonCrypto
 import Alamofire
@@ -5,12 +6,19 @@ import TrustKit
 
 final class SSLChecker: NSObject {
     
+    typealias ChallengeStateUpdate = (ChallengeState) -> Void
+    
     private static let domain = "github.com"
     private static let wildcardHost = "*.\(domain)"
     private static let testURLString = "https://\(domain)"
     private static let pinnedPublicKeyHash = "sha256/e4wu8h9eLNeNUg6cVb5gGWM0PsiM9M3i3E32qKOkBAA="
     private static let pinnedPublicKeyHashBackup = "sha256/UoSFbDIf6Y0eWzco1ugHE7sHyQ92pZsc8thjcgMsaAB="
     private static let expectedHash = pinnedPublicKeyHash.replacingOccurrences(of: "sha256/", with: "")
+    
+    private enum Constants {
+        static let loadingDelay: TimeInterval = 0.5
+        static let operationDelay: TimeInterval = 1.0
+    }
     
     private static func extractSPKI(from certificateData: Data) -> Data? {
         var offset = 0
@@ -214,6 +222,69 @@ final class SSLChecker: NSObject {
         session.invalidateAndCancel()
         
         return pinningSuccess
+    }
+    
+    static func checkSSLWithURLSessionWithStates(
+        onStateUpdate: @escaping ChallengeStateUpdate
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
+            onStateUpdate(.loading)
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                Thread.sleep(forTimeInterval: Constants.operationDelay)
+                
+                let result = checkSSLWithURLSession()
+                let finalResult: Result<Bool, Error> = .success(result)
+                
+                DispatchQueue.main.async {
+                    onStateUpdate(.finished(finalResult))
+                }
+            }
+        }
+    }
+    
+    static func checkSSLWithAlamofireWithStates(
+        onStateUpdate: @escaping ChallengeStateUpdate
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
+            onStateUpdate(.loading)
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                Thread.sleep(forTimeInterval: Constants.operationDelay)
+                
+                let result = checkSSLWithAlamofire()
+                let finalResult: Result<Bool, Error> = .success(result)
+                
+                DispatchQueue.main.async {
+                    onStateUpdate(.finished(finalResult))
+                }
+            }
+        }
+    }
+    
+    static func checkSSLWithTrustKitWithStates(
+        onStateUpdate: @escaping ChallengeStateUpdate
+    ) {
+        onStateUpdate(.started)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.loadingDelay) {
+            onStateUpdate(.loading)
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                Thread.sleep(forTimeInterval: Constants.operationDelay)
+                
+                let result = checkSSLWithTrustKit()
+                let finalResult: Result<Bool, Error> = .success(result)
+                
+                DispatchQueue.main.async {
+                    onStateUpdate(.finished(finalResult))
+                }
+            }
+        }
     }
 }
 
